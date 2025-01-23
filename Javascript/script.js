@@ -1,15 +1,30 @@
+const configContainer = document.querySelector(".config-container");
+const quizContainer = document.querySelector(".quiz-container");
 const answerOptions = document.querySelector(".answer-options");
 const nextQuestionBtn = document.querySelector(".next-question-btn");
 const questionStatus = document.querySelector(".question-status");
 const timerDisplay = document.querySelector(".time-duration");
+const resultContainer = document.querySelector(".result-container");
+
 //Quiz state variables
-const QUIZ_TIME_LIMIT = 5;
+const QUIZ_TIME_LIMIT = 15;
 let currentTime = QUIZ_TIME_LIMIT;
 let timer = null;
 let quizCategory = "programming";
 let numberOfQuestions = 5;
 let currentQuestion = null;
 const questionsIndexHistory = [];
+let correctAnswerCount = 0;
+
+//display the quiz result and hide the quiz container
+const showQuizResult = () => {
+  quizContainer.style.display = "none";
+  resultContainer.style.display = "block";
+
+  const resultText = `You answered <b>${correctAnswerCount}</b> out of <b>${numberOfQuestions}</b> questions correctly. Great effort`;
+  document.querySelector(".result-message").innerHTML = resultText;
+};
+
 //clear and reset the timer
 const resetTimer = () => {
   clearInterval(timer);
@@ -26,6 +41,7 @@ const startTimer = () => {
       clearInterval(timer);
       highlightCorrectAnswer();
       nextQuestionBtn.style.visibility = "visible";
+      quizContainer.querySelector(".quiz-timer").style.background = "#c31402";
       //disable all answer options after one option is selected
       answerOptions
         .querySelectorAll(".answer-option")
@@ -49,7 +65,7 @@ const getRandomQuestion = () => {
     questionsIndexHistory.length >=
     Math.min(categoryQuestions.length, numberOfQuestions)
   ) {
-    return console.log("Quiz Completed");
+    return showQuizResult();
   }
 
   //filter out already asked questions and choose a random one
@@ -77,7 +93,7 @@ const handleAnswer = (option, answerIndex) => {
   const isCorrect = currentQuestion.correctAnswer === answerIndex;
   option.classList.add(isCorrect ? "correct" : "incorrect");
 
-  !isCorrect ? highlightCorrectAnswer() : "";
+  !isCorrect ? highlightCorrectAnswer() : correctAnswerCount++;
 
   //Insert icon based on correctness
   const iconHTML = `<span class="material-symbols-rounded">
@@ -103,6 +119,7 @@ const renderQuestion = () => {
   //Update the UI
   answerOptions.innerHTML = "";
   nextQuestionBtn.style.visibility = "hidden";
+  quizContainer.querySelector(".quiz-timer").style.background = "#32313c";
   document.querySelector(".question-text").textContent =
     currentQuestion.question;
   questionStatus.innerHTML = `<b>${questionsIndexHistory.length}</b> of <b>${numberOfQuestions}</b> Questions`;
@@ -116,7 +133,41 @@ const renderQuestion = () => {
     li.addEventListener("click", () => handleAnswer(li, index));
   });
 };
+//start the quiz and render the random question
+const startQuiz = () => {
+  configContainer.style.display = "none";
+  quizContainer.style.display = "block";
 
-renderQuestion();
+  //update the quiz category and number of questions
+  quizCategory = configContainer.querySelector(
+    ".category-option.active"
+  ).textContent;
+  numberOfQuestions = parseInt(
+    configContainer.querySelector(".question-option.active").textContent
+  );
+
+  renderQuestion();
+};
+
+//highlight the selected option on click-category or on no of question
+document
+  .querySelectorAll(".category-option, .question-option")
+  .forEach((option) => {
+    option.addEventListener("click", () => {
+      option.parentNode.querySelector(".active").classList.remove("active");
+      option.classList.add("active");
+    });
+  });
+
+//reset the quiz and return to the configuration container
+const resetQuiz = () => {
+  resetTimer();
+  correctAnswerCount = 0;
+  questionsIndexHistory.length = 0;
+  configContainer.style.display = "block";
+  resultContainer.style.display = "none";
+};
 
 nextQuestionBtn.addEventListener("click", renderQuestion);
+document.querySelector(".try-again-btn").addEventListener("click", resetQuiz);
+document.querySelector(".start-quiz-btn").addEventListener("click", startQuiz);
